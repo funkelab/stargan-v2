@@ -138,13 +138,13 @@ class Generator(nn.Module):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
-        self.from_rgb = nn.Conv2d(3, dim_in, 3, 1, 1)
+        self.from_rgb = nn.Conv2d(1, dim_in, 3, 1, 1)
         self.encode = nn.ModuleList()
         self.decode = nn.ModuleList()
         self.to_rgb = nn.Sequential(
             nn.InstanceNorm2d(dim_in, affine=True),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(dim_in, 3, 1, 1, 0))
+            nn.Conv2d(dim_in, 1, 1, 1, 0))
 
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - 4
@@ -224,7 +224,7 @@ class StyleEncoder(nn.Module):
         super().__init__()
         dim_in = 2**14 // img_size
         blocks = []
-        blocks += [nn.Conv2d(3, dim_in, 3, 1, 1)]
+        blocks += [nn.Conv2d(1, dim_in, 3, 1, 1)]
 
         repeat_num = int(np.log2(img_size)) - 2
         for _ in range(repeat_num):
@@ -258,7 +258,7 @@ class Discriminator(nn.Module):
         super().__init__()
         dim_in = 2**14 // img_size
         blocks = []
-        blocks += [nn.Conv2d(3, dim_in, 3, 1, 1)]
+        blocks += [nn.Conv2d(1, dim_in, 3, 1, 1)]
 
         repeat_num = int(np.log2(img_size)) - 2
         for _ in range(repeat_num):

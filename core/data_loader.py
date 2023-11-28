@@ -39,7 +39,7 @@ class DefaultDataset(data.Dataset):
 
     def __getitem__(self, index):
         fname = self.samples[index]
-        img = Image.open(fname).convert('RGB')
+        img = Image.open(fname)
         if self.transform is not None:
             img = self.transform(img)
         return img
@@ -67,8 +67,8 @@ class ReferenceDataset(data.Dataset):
     def __getitem__(self, index):
         fname, fname2 = self.samples[index]
         label = self.targets[index]
-        img = Image.open(fname).convert('RGB')
-        img2 = Image.open(fname2).convert('RGB')
+        img = Image.open(fname)
+        img2 = Image.open(fname2)
         if self.transform is not None:
             img = self.transform(img)
             img2 = self.transform(img2)
@@ -97,11 +97,12 @@ def get_train_loader(root, which='source', img_size=256,
 
     transform = transforms.Compose([
         rand_crop,
+        transforms.Grayscale(),
         transforms.Resize([img_size, img_size]),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5],
-                             std=[0.5, 0.5, 0.5]),
+        transforms.Normalize(mean=0.5, std=0.5),
     ])
 
     if which == 'source':
@@ -130,10 +131,11 @@ def get_eval_loader(root, img_size=256, batch_size=32,
         std = [0.229, 0.224, 0.225]
     else:
         height, width = img_size, img_size
-        mean = [0.5, 0.5, 0.5]
-        std = [0.5, 0.5, 0.5]
+        mean = 0.5
+        std = 0.5
 
     transform = transforms.Compose([
+        transforms.Grayscale(),
         transforms.Resize([img_size, img_size]),
         transforms.Resize([height, width]),
         transforms.ToTensor(),
@@ -153,10 +155,10 @@ def get_test_loader(root, img_size=256, batch_size=32,
                     shuffle=True, num_workers=4):
     print('Preparing DataLoader for the generation phase...')
     transform = transforms.Compose([
+        transforms.Grayscale(),
         transforms.Resize([img_size, img_size]),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5],
-                             std=[0.5, 0.5, 0.5]),
+        transforms.Normalize(mean=0.5, std=0.5),
     ])
 
     dataset = ImageFolder(root, transform)
