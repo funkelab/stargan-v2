@@ -145,6 +145,7 @@ class Generator(nn.Module):
             nn.InstanceNorm2d(dim_in, affine=True),
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 1, 1, 1, 0))
+        self.final_activation = nn.Tanh()
 
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - 4
@@ -184,7 +185,9 @@ class Generator(nn.Module):
                 mask = masks[0] if x.size(2) in [32] else masks[1]
                 mask = F.interpolate(mask, size=x.size(2), mode='bilinear')
                 x = x + self.hpf(mask * cache[x.size(2)])
-        return self.to_rgb(x)
+        return self.final_activation(
+            self.to_rgb(x)
+        ) 
 
 
 class MappingNetwork(nn.Module):

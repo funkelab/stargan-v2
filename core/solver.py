@@ -17,6 +17,8 @@ from munch import Munch
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import transforms
+
 
 from core.model import build_model
 from core.checkpoint import CheckpointIO
@@ -24,6 +26,13 @@ from core.data_loader import InputFetcher
 import core.utils as utils
 from metrics.eval import calculate_metrics
 from inference.generate import generate_styles
+
+
+transform = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    ]
+)
 
 
 class Solver(nn.Module):
@@ -250,7 +259,8 @@ def compute_g_loss(nets, args, x_real, y_org, y_trg, z_trgs=None, x_refs=None, m
     loss_adv = adv_loss(out, 1)
 
     # style reconstruction loss
-    s_pred = nets.style_encoder(x_fake, y_trg)
+    # Adds random augmentation to x_fake before passing to style encoder
+    s_pred = nets.style_encoder(transform(x_fake), y_trg)
     loss_sty = torch.mean(torch.abs(s_pred - s_trg))
 
     # diversity sensitive loss
