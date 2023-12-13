@@ -70,6 +70,8 @@ class LPIPS(nn.Module):
                 own_state_dict[name].copy_(param)
 
     def forward(self, x, y):
+        # stack x three times in channels because LPIPS network expects RGB inputs
+        x = torch.cat([x, x, x], dim=1)
         x = (x - self.mu) / self.sigma
         y = (y - self.mu) / self.sigma
         x_fmaps = self.alexnet(x)
