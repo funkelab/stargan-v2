@@ -23,6 +23,7 @@ from core.checkpoint import CheckpointIO
 from core.data_loader import InputFetcher
 import core.utils as utils
 from metrics.eval import calculate_metrics
+from inference.generate import generate_styles
 
 
 class Solver(nn.Module):
@@ -196,6 +197,14 @@ class Solver(nn.Module):
         self._load_checkpoint(args.resume_iter)
         calculate_metrics(nets_ema, args, step=resume_iter, mode='latent')
         calculate_metrics(nets_ema, args, step=resume_iter, mode='reference')
+
+    @torch.no_grad()
+    def make_styles(self):
+        args = self.args
+        nets = self.nets_ema
+        resume_iter = args.resume_iter
+        self._load_checkpoint(args.resume_iter)
+        generate_styles(nets, args, step=resume_iter)
 
 
 def compute_d_loss(nets, args, x_real, y_org, y_trg, z_trg=None, x_ref=None, masks=None):
