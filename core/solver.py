@@ -22,7 +22,7 @@ from torchvision import transforms
 
 from core.model import build_model
 from core.checkpoint import CheckpointIO
-from core.data_loader import InputFetcher
+from core.data_loader import InputFetcher, AugmentedInputFetcher
 import core.utils as utils
 from metrics.eval import calculate_metrics
 from inference.generate import generate_styles
@@ -93,7 +93,7 @@ class Solver(nn.Module):
         optims = self.optims
 
         # fetch random validation images for debugging
-        fetcher = InputFetcher(loaders.src, loaders.ref, args.latent_dim, 'train')
+        fetcher = AugmentedInputFetcher(loaders.src, loaders.ref, args.latend_dim, 'train')
         fetcher_val = InputFetcher(loaders.val, None, args.latent_dim, 'val')
         inputs_val = next(fetcher_val)
 
@@ -109,7 +109,7 @@ class Solver(nn.Module):
         for i in range(args.resume_iter, args.total_iters):
             # fetch images and labels
             inputs = next(fetcher)
-            x_real, y_org = inputs.x_src, inputs.y_src
+            x_real, x_aug, y_org = inputs.x_src, inputs.x_src2, inputs.y_src
             x_ref, x_ref2, y_trg = inputs.x_ref, inputs.x_ref2, inputs.y_ref
             z_trg, z_trg2 = inputs.z_trg, inputs.z_trg2
 
@@ -138,7 +138,7 @@ class Solver(nn.Module):
             optims.style_encoder.step()
 
             g_loss, g_losses_ref = compute_g_loss(
-                nets, args, x_real, y_org, y_trg, x_refs=[x_ref, x_ref2], masks=masks)
+                nets, args, x_real, y_org, y_trg, x_refs=[x_ref, x_ref2], masks=masks, x_aug=x_aug)
             self._reset_grad()
             g_loss.backward()
             optims.generator.step()
@@ -241,7 +241,7 @@ def compute_d_loss(nets, args, x_real, y_org, y_trg, z_trg=None, x_ref=None, mas
                        reg=loss_reg.item())
 
 
-def compute_g_loss(nets, args, x_real, y_org, y_trg, z_trgs=None, x_refs=None, masks=None):
+def compute_g_loss(nets, args, x_real, y_org, y_trg, z_trgs=None, x_refs=None, masks=None, x_aug=None):
     assert (z_trgs is None) != (x_refs is None)
     if z_trgs is not None:
         z_trg, z_trg2 = z_trgs
@@ -277,6 +277,22 @@ def compute_g_loss(nets, args, x_real, y_org, y_trg, z_trgs=None, x_refs=None, m
     s_org = nets.style_encoder(x_real, y_org)
     x_rec = nets.generator(x_fake, s_org, masks=masks)
     loss_cyc = torch.mean(torch.abs(x_rec - x_real))
+
+    # style invariance loss
+    if x_aug is not None:
+        s_pred2 = nets.style_encoder(x_aug, y_org)
+        loss_sty2 = torch.mean(torch.abs(s_pred2 - s_org))
+        loss_sty = (loss_sty + loss_sty2) / 2
+
+    # TODO Triplet loss with anchor=x_fake (from reference), neg=x_fake2 (from reference 2), and pos=x_fake3 (from augmented x_ref1)
+    # e.g.
+    # from torch.nn.functional import triplet_margin_loss
+    # if x_trg is not None: 
+    #   x_ref3 = transform(x_ref)
+    #   s_trg3 = nets.style_encoder(x_ref3, y_trg)
+    #   x_fake3 = nets.generator(x_real, s_trg3, masks=masks)
+    #   loss_triplet = triplet_margin_loss(x_fake, x_fake2, x_fake3)
+    # I'm hoping this has the effect of a invariance-diversity double whammy
 
     loss = loss_adv + args.lambda_sty * loss_sty \
         - args.lambda_ds * loss_ds + args.lambda_cyc * loss_cyc

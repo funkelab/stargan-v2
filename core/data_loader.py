@@ -48,6 +48,43 @@ class DefaultDataset(data.Dataset):
         return len(self.samples)
 
 
+class AugmentedDataset(data.Dataset):
+    """Adds an augmented version of the input to the sample."""
+    def __init__(self, root, transform=None, augment=None):
+        self.samples, self.targets = self._make_dataset(root)
+        self.transform = transform
+        if augment is None:
+            # Default augmentation: random horizontal flip, random vertical flip
+            augment = transforms.Compose([
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ])
+        self.augment = augment
+
+    def _make_dataset(self, root):
+        domains = os.listdir(root)
+        fnames, labels = [], []
+        for idx, domain in enumerate(sorted(domains)):
+            class_dir = os.path.join(root, domain)
+            cls_fnames = listdir(class_dir)
+            fnames += cls_fnames
+            labels += [idx] * len(cls_fnames)
+        return fnames, labels
+
+    def __getitem__(self, index):
+        fname = self.samples[index]
+        label = self.targets[index]
+        img = Image.open(fname)
+        img2 = self.augment(img)
+        if self.transform is not None:
+            img = self.transform(img)
+            img2 = self.transform(img2)
+        return img, img2, label
+
+    def __len__(self):
+        return len(self.targets)
+
+
 class ReferenceDataset(data.Dataset):
     def __init__(self, root, transform=None):
         self.samples, self.targets = self._make_dataset(root)
@@ -106,7 +143,8 @@ def get_train_loader(root, which='source', img_size=256,
     ])
 
     if which == 'source':
-        dataset = ImageFolder(root, transform)
+        # dataset = ImageFolder(root, transform)
+        dataset = AugmentedDataset(root, transform)
     elif which == 'reference':
         dataset = ReferenceDataset(root, transform)
     else:
@@ -213,3 +251,39 @@ class InputFetcher:
 
         return Munch({k: v.to(self.device)
                       for k, v in inputs.items()})
+
+
+class AugmentedInputFetcher(InputFetcher):
+    def __init__(self, loader, loader_ref=None, latent_dim=16, mode=''):
+        super().__init__(loader, loader_ref, latent_dim, mode)
+
+    def _fetch_inputs(self):
+        try:
+            x, x2, y = next(self.iter)
+        except (AttributeError, StopIteration):
+            self.iter = iter(self.loader)
+            x, x2, y = next(self.iter)
+        return x, x2, y
+    
+    def __next__(self):
+        x, x2, y = self._fetch_inputs()
+        if self.mode == 'train':
+            x_ref, x_ref2, y_ref = self._fetch_refs()
+            z_trg = torch.randn(x.size(0), self.latent_dim)
+            z_trg2 = torch.randn(x.size(0), self.latent_dim)
+            inputs = Munch(x_src=x, y_src=y, x_src2=x2, y_ref=y_ref,
+                           x_ref=x_ref, x_ref2=x_ref2,
+                           z_trg=z_trg, z_trg2=z_trg2)
+        elif self.mode == 'val':
+            x_ref, _, y_ref = self._fetch_inputs()
+            inputs = Munch(x_src=x, y_src=y,
+                           x_ref=x_ref, y_ref=y_ref)
+        elif self.mode == 'test':
+            inputs = Munch(x=x, y=y)
+        else:
+            raise NotImplementedError
+
+        return Munch({k: v.to(self.device)
+                      for k, v in inputs.items()})
+
+
