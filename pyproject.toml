@@ -1,0 +1,42 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "starganv2"
+description = "Funkelab iteration on the Starganv2 model"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+keywords = []
+license = { text = "BSD 3-Clause License" }
+authors = [
+    { email = "adjavond@hhmi.org", name = "Diane Adjavon" },
+]
+dynamic = ["version"]
+dependencies = [
+    'opencv-python',
+    'ffmpeg-python',
+    'scikit-image',
+    'pillow',
+    'scipy',
+    'tqdm',
+    'torch',
+    'torchvision',
+    'munch'
+]
+
+[project.optional-dependencies]
+dev = [
+  'pytest',
+  'black',
+  'mypy',
+  'pdoc',
+  'pre-commit'
+]
+
+[project.urls]
+homepage = "https://github.com/funkelab/stargan-v2"
+repository = "https://github.com/funkelab/stargan-v2"

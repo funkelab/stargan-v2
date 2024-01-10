@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from core.wing import FAN
+from starganv2.core.wing import FAN
 
 
 class ResBlk(nn.Module):
