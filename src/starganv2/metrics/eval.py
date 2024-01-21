@@ -16,11 +16,11 @@ from tqdm import tqdm
 import numpy as np
 import torch
 
-from metrics.fid import calculate_fid_given_paths
-from metrics.lpips import calculate_lpips_given_images
-from metrics.conversion import calculate_conversion_given_path
-from core.data_loader import get_eval_loader
-from core import utils
+from starganv2.metrics.fid import calculate_fid_given_paths
+from starganv2.metrics.lpips import calculate_lpips_given_images
+from starganv2.metrics.conversion import calculate_conversion_given_path
+from starganv2.core.data_loader import get_eval_loader
+from starganv2.core import utils
 
 
 @torch.no_grad()

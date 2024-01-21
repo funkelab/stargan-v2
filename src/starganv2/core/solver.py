@@ -24,8 +24,8 @@ from starganv2.core.model import build_model
 from starganv2.core.checkpoint import CheckpointIO
 from starganv2.core.data_loader import InputFetcher, AugmentedInputFetcher
 import starganv2.core.utils as utils
-from metrics.eval import calculate_metrics
-from inference.generate import generate_styles
+from starganv2.metrics.eval import calculate_metrics
+from starganv2.inference.generate import generate_styles
 
 
 transform = transforms.Compose([

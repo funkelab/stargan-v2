@@ -2,7 +2,7 @@
 Various versions of conversion rates
 """
 import argparse
-from core.data_loader import get_eval_loader
+from starganv2.core.data_loader import get_eval_loader
 from funlib.learn.torch.models import Vgg2D
 import torch
 from tqdm import tqdm

@@ -1,5 +1,5 @@
-from core.data_loader import get_eval_loader
-from core.utils import denormalize
+from starganv2.core.data_loader import get_eval_loader
+from starganv2.core.utils import denormalize
 from funlib.learn.torch.models import Vgg2D
 import numpy as np
 import os

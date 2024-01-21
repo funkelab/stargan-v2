@@ -16,7 +16,7 @@ import torch.nn as nn
 import numpy as np
 from torchvision import models
 from scipy import linalg
-from core.data_loader import get_eval_loader
+from starganv2.core.data_loader import get_eval_loader
 
 try:
     from tqdm import tqdm
