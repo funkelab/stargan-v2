@@ -134,17 +134,17 @@ class HighPass(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, w_hpf=1):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, w_hpf=1, input_dim=1):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
-        self.from_rgb = nn.Conv2d(1, dim_in, 3, 1, 1)
+        self.from_rgb = nn.Conv2d(input_dim, dim_in, 3, 1, 1)
         self.encode = nn.ModuleList()
         self.decode = nn.ModuleList()
         self.to_rgb = nn.Sequential(
             nn.InstanceNorm2d(dim_in, affine=True),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(dim_in, 1, 1, 1, 0))
+            nn.Conv2d(dim_in, input_dim, 1, 1, 0))
         self.final_activation = nn.Tanh()
 
         # down/up-sampling blocks
@@ -223,14 +223,20 @@ class MappingNetwork(nn.Module):
 
 
 class StyleEncoder(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512):
+    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, input_dim=3):
         super().__init__()
         dim_in = 2**14 // img_size
+
+        self.nearest_power = None
+        if np.ceil(np.log2(img_size)) != np.floor(np.log2(img_size)):  # Not power of 2
+            self.nearest_power = int(np.log2(img_size))
+
         blocks = []
-        blocks += [nn.Conv2d(1, dim_in, 3, 1, 1)]
+        blocks += [nn.Conv2d(input_dim, dim_in, 3, 1, 1)]
 
         repeat_num = int(np.log2(img_size)) - 2
         for _ in range(repeat_num):
+            # For img_size = 224, repeat_num = 5, dim_out = 256, 512, 512, 512, 512
             dim_out = min(dim_in*2, max_conv_dim)
             blocks += [ResBlk(dim_in, dim_out, downsample=True)]
             dim_in = dim_out
@@ -245,6 +251,10 @@ class StyleEncoder(nn.Module):
             self.unshared += [nn.Linear(dim_out, style_dim)]
 
     def forward(self, x, y):
+        if self.nearest_power is not None:
+            # Required for img_size=224 in the retina case
+            # Resize input image to nearest power of 2
+            x = F.interpolate(x, size=2**self.nearest_power, mode='bilinear')
         h = self.shared(x)
         h = h.view(h.size(0), -1)
         out = []
@@ -257,11 +267,11 @@ class StyleEncoder(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512):
+    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512, input_dim=3):
         super().__init__()
         dim_in = 2**14 // img_size
         blocks = []
-        blocks += [nn.Conv2d(1, dim_in, 3, 1, 1)]
+        blocks += [nn.Conv2d(input_dim, dim_in, 3, 1, 1)]
 
         repeat_num = int(np.log2(img_size)) - 2
         for _ in range(repeat_num):
@@ -284,10 +294,10 @@ class Discriminator(nn.Module):
 
 
 def build_model(args):
-    generator = nn.DataParallel(Generator(args.img_size, args.style_dim, w_hpf=args.w_hpf))
+    generator = nn.DataParallel(Generator(args.img_size, args.style_dim, w_hpf=args.w_hpf, input_dim=args.input_dim))
     mapping_network = nn.DataParallel(MappingNetwork(args.latent_dim, args.style_dim, args.num_domains))
-    style_encoder = nn.DataParallel(StyleEncoder(args.img_size, args.style_dim, args.num_domains))
-    discriminator = nn.DataParallel(Discriminator(args.img_size, args.num_domains))
+    style_encoder = nn.DataParallel(StyleEncoder(args.img_size, args.style_dim, args.num_domains, input_dim=args.input_dim))
+    discriminator = nn.DataParallel(Discriminator(args.img_size, args.num_domains, input_dim=args.input_dim))
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)

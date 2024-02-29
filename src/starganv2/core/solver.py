@@ -93,7 +93,7 @@ class Solver(nn.Module):
         optims = self.optims
 
         # fetch random validation images for debugging
-        fetcher = AugmentedInputFetcher(loaders.src, loaders.ref, args.latend_dim, 'train')
+        fetcher = AugmentedInputFetcher(loaders.src, loaders.ref, args.latent_dim, 'train')
         fetcher_val = InputFetcher(loaders.val, None, args.latent_dim, 'val')
         inputs_val = next(fetcher_val)
 

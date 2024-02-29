@@ -11,6 +11,10 @@ Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 import torch
 import torch.nn as nn
 from torchvision import models
+from pathlib import Path
+
+
+metrics_directory = Path(__file__).resolve().parents[0]
 
 
 def normalize(x, eps=1e-10):
@@ -61,9 +65,9 @@ class LPIPS(nn.Module):
     def _load_lpips_weights(self):
         own_state_dict = self.state_dict()
         if torch.cuda.is_available():
-            state_dict = torch.load('metrics/lpips_weights.ckpt')
+            state_dict = torch.load(metrics_directory / 'lpips_weights.ckpt')
         else:
-            state_dict = torch.load('metrics/lpips_weights.ckpt',
+            state_dict = torch.load(metrics_directory / 'lpips_weights.ckpt',
                                     map_location=torch.device('cpu'))
         for name, param in state_dict.items():
             if name in own_state_dict:
@@ -71,7 +75,8 @@ class LPIPS(nn.Module):
 
     def forward(self, x, y):
         # stack x three times in channels because LPIPS network expects RGB inputs
-        x = torch.cat([x, x, x], dim=1)
+        if x.size(1) == 1:
+            x = torch.cat([x, x, x], dim=1)
         x = (x - self.mu) / self.sigma
         y = (y - self.mu) / self.sigma
         x_fmaps = self.alexnet(x)

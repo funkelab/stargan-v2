@@ -123,7 +123,8 @@ def _make_balanced_sampler(labels):
 
 
 def get_train_loader(root, which='source', img_size=256,
-                     batch_size=8, prob=0.5, num_workers=4):
+                     batch_size=8, prob=0.5, num_workers=4, 
+                     grayscale=False, mean=0.5, std=0.5):
     print('Preparing DataLoader to fetch %s images '
           'during the training phase...' % which)
 
@@ -132,14 +133,17 @@ def get_train_loader(root, which='source', img_size=256,
     rand_crop = transforms.Lambda(
         lambda x: crop(x) if random.random() < prob else x)
 
+    transform_list = [rand_crop]
+    if grayscale:
+        transform.append(transforms.Grayscale())
+
     transform = transforms.Compose([
-        rand_crop,
-        transforms.Grayscale(),
+        *transform_list,
         transforms.Resize([img_size, img_size]),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize(mean=0.5, std=0.5),
+        transforms.Normalize(mean=mean, std=std),
     ])
 
     if which == 'source':
@@ -161,7 +165,8 @@ def get_train_loader(root, which='source', img_size=256,
 
 def get_eval_loader(root, img_size=256, batch_size=32,
                     imagenet_normalize=True, shuffle=True,
-                    num_workers=4, drop_last=False):
+                    num_workers=4, drop_last=False, 
+                    grayscale=False):
     print('Preparing DataLoader for the evaluation phase...')
     if imagenet_normalize:
         height, width = 299, 299
@@ -172,9 +177,12 @@ def get_eval_loader(root, img_size=256, batch_size=32,
         mean = 0.5
         std = 0.5
 
+    transform_list = []
+    if grayscale: 
+        transform_list.append(transforms.Grayscale())
+
     transform = transforms.Compose([
-        transforms.Grayscale(),
-        transforms.Resize([img_size, img_size]),
+        *transform_list,
         transforms.Resize([height, width]),
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
@@ -190,13 +198,17 @@ def get_eval_loader(root, img_size=256, batch_size=32,
 
 
 def get_test_loader(root, img_size=256, batch_size=32,
-                    shuffle=True, num_workers=4):
+                    shuffle=True, num_workers=4, grayscale=False, 
+                    mean=0.5, std=0.5):
     print('Preparing DataLoader for the generation phase...')
+    transform_list = []
+    if grayscale:
+        transform_list.append(transforms.Grayscale())
     transform = transforms.Compose([
-        transforms.Grayscale(),
+        *transform_list,
         transforms.Resize([img_size, img_size]),
         transforms.ToTensor(),
-        transforms.Normalize(mean=0.5, std=0.5),
+        transforms.Normalize(mean=mean, std=std),
     ])
 
     dataset = ImageFolder(root, transform)
