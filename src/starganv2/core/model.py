@@ -293,11 +293,15 @@ class Discriminator(nn.Module):
         return out
 
 
-def build_model(args):
-    generator = nn.DataParallel(Generator(args.img_size, args.style_dim, w_hpf=args.w_hpf, input_dim=args.input_dim))
-    mapping_network = nn.DataParallel(MappingNetwork(args.latent_dim, args.style_dim, args.num_domains))
-    style_encoder = nn.DataParallel(StyleEncoder(args.img_size, args.style_dim, args.num_domains, input_dim=args.input_dim))
-    discriminator = nn.DataParallel(Discriminator(args.img_size, args.num_domains, input_dim=args.input_dim))
+def build_model(args, gpu_ids=[0]):
+    generator = nn.DataParallel(Generator(args.img_size, args.style_dim, w_hpf=args.w_hpf, input_dim=args.input_dim), 
+                                device_ids=gpu_ids)
+    mapping_network = nn.DataParallel(MappingNetwork(args.latent_dim, args.style_dim, args.num_domains),
+                                      device_ids=gpu_ids)
+    style_encoder = nn.DataParallel(StyleEncoder(args.img_size, args.style_dim, args.num_domains, input_dim=args.input_dim),
+                                    device_ids=gpu_ids)
+    discriminator = nn.DataParallel(Discriminator(args.img_size, args.num_domains, input_dim=args.input_dim), 
+                                    device_ids=gpu_ids)
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)

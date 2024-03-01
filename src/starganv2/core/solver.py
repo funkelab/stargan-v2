@@ -39,15 +39,24 @@ class Solver(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if torch.cuda.is_available():
+            print("Using CUDA")
+            self.device = torch.device("cuda")
+            gpu_ids = args.gpu_ids 
+        else:
+            print("Using CPU")
+            self.device = torch.device("cpu")
+            gpu_ids = None
 
-        self.nets, self.nets_ema = build_model(args)
+        print('Initializing the model...')
+        self.nets, self.nets_ema = build_model(args, gpu_ids=gpu_ids)
         # below setattrs are to make networks be children of Solver, e.g., for self.to(self.device)
         for name, module in self.nets.items():
             utils.print_network(module, name)
             setattr(self, name, module)
         for name, module in self.nets_ema.items():
             setattr(self, name + '_ema', module)
+        print("Done.")
 
         if args.mode == 'train':
             self.optims = Munch()
