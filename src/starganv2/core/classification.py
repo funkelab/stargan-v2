@@ -1,4 +1,5 @@
 import torch
+from torchvision import transforms
 
 
 class ClassifierWrapper(torch.nn.Module):

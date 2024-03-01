@@ -117,6 +117,7 @@ class ReferenceDataset(data.Dataset):
 
 def _make_balanced_sampler(labels):
     class_counts = np.bincount(labels)
+    assert np.all(class_counts > 0), f"Some of the classes are empty. {class_counts}"
     class_weights = 1. / class_counts
     weights = class_weights[labels]
     return WeightedRandomSampler(weights, len(weights))
@@ -135,7 +136,7 @@ def get_train_loader(root, which='source', img_size=256,
 
     transform_list = [rand_crop]
     if grayscale:
-        transform.append(transforms.Grayscale())
+        transform_list.append(transforms.Grayscale())
 
     transform = transforms.Compose([
         *transform_list,
