@@ -7,7 +7,6 @@ from starganv2.core.data_loader import get_eval_loader
 from starganv2.core.classification import ClassifierWrapper
 from funlib.learn.torch.models import Vgg2D
 import torch
-from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
 
@@ -22,6 +21,7 @@ def calculate_conversion_given_path(
     num_outs_per_domain=10,
     mean=0.5,
     std=0.5,
+    grayscale=False,
 ):
     print("Calculating conversion given path %s..." % path)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,7 +30,7 @@ def calculate_conversion_given_path(
     classifier.eval()
 
     loader = get_eval_loader(
-        path, img_size, batch_size, imagenet_normalize=False, shuffle=False
+        path, img_size, batch_size, imagenet_normalize=False, shuffle=False, grayscale=grayscale
     )
 
     predictions = []

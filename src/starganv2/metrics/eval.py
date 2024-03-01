@@ -34,6 +34,7 @@ def calculate_metrics(nets, args, step, mode):
     num_domains = len(domains)
     print("Number of domains: %d" % num_domains)
 
+    grayscale = (args.input_dim == 1)
     lpips_dict = OrderedDict()
     for trg_idx, trg_domain in enumerate(domains):
         src_domains = [x for x in domains if x != trg_domain]
@@ -46,6 +47,7 @@ def calculate_metrics(nets, args, step, mode):
                 batch_size=args.val_batch_size,
                 imagenet_normalize=False,
                 drop_last=True,
+                grayscale=grayscale
             )
 
         for src_idx, src_domain in enumerate(src_domains):
@@ -55,6 +57,7 @@ def calculate_metrics(nets, args, step, mode):
                 img_size=args.img_size,
                 batch_size=args.val_batch_size,
                 imagenet_normalize=False,
+                grayscale=grayscale
             )
 
             task = "%s2%s" % (src_domain, trg_domain)
@@ -177,6 +180,7 @@ def calculate_conversion_for_all_tasks(args, domains, step, mode):
                 num_outs_per_domain=args.num_outs_per_domain,
                 mean=args.mean,
                 std=args.std,
+                grayscale=(args.input_dim == 1),
             )
             conversion_rate_values[
                 "conversion_rate_%s/%s" % (mode, task)
