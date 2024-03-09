@@ -10,6 +10,7 @@ Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 from pathlib import Path
 from itertools import chain
+import glob
 import os
 import random
 
@@ -62,7 +63,7 @@ class AugmentedDataset(data.Dataset):
         self.augment = augment
 
     def _make_dataset(self, root):
-        domains = os.listdir(root)
+        domains = glob.glob(os.path.join(root, '*'))
         fnames, labels = [], []
         for idx, domain in enumerate(sorted(domains)):
             class_dir = os.path.join(root, domain)
@@ -130,7 +131,8 @@ def get_train_loader(root, which='source', img_size=256,
           'during the training phase...' % which)
 
     crop = transforms.RandomResizedCrop(
-        img_size, scale=[0.8, 1.0], ratio=[0.9, 1.1])
+        img_size, scale=[0.8, 1.0], ratio=[0.9, 1.1]
+    )
     rand_crop = transforms.Lambda(
         lambda x: crop(x) if random.random() < prob else x)
 
