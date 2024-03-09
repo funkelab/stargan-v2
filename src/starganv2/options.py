@@ -22,6 +22,9 @@ def build_parser():
     parser.add_argument(
         "--input_dim", type=int, default=3, help="Number of channels in the image"
     )
+    parser.add_argument(
+        "--single_output_style_encoder", action="store_true", help="Use a single output style encoder"
+    )
 
     # weight for objective functions
     parser.add_argument(
