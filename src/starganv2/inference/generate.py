@@ -1,5 +1,6 @@
 from starganv2.core.data_loader import get_eval_loader
 from starganv2.core.utils import denormalize
+from starganv2.core.classification import ClassifierWrapper
 from funlib.learn.torch.models import Vgg2D
 import numpy as np
 import os
@@ -27,9 +28,8 @@ def generate_styles(nets, args, step):
     output_predictions = output.require_group("predictions")
 
     # Load the classifier
-    classifier = Vgg2D(input_size=(128, 128), fmaps=12)
-    checkpoint = torch.load("/nrs/funke/adjavond/checkpoints/synapses/classifier/vgg_checkpoint")
-    classifier.load_state_dict(checkpoint["model_state_dict"])
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    classifier = ClassifierWrapper(model_checkpoint=args.classifier_checkpoint, mean=args.mean, std=args.std)
     classifier.to(device)
     classifier.eval()
 
