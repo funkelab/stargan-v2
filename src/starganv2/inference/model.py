@@ -1,5 +1,4 @@
 """Reduces the model into just want is needed for inference."""
-from munch import Munch
 from os.path import join as ospj
 from starganv2.core.model import Generator, MappingNetwork, StyleEncoder
 from starganv2.core.checkpoint import CheckpointIO
@@ -8,10 +7,10 @@ import torch
 
 class LatentInferenceModel(torch.nn.Module):
     def __init__(
-        self, checkpoint_dir, img_size, style_dim, latent_dim, num_domains=6, w_hpf=0.0
+        self, checkpoint_dir, img_size, style_dim, latent_dim, input_dim=1, num_domains=6, w_hpf=0.0
     ) -> None:
         super().__init__()
-        generator = Generator(img_size, style_dim, w_hpf=w_hpf)
+        generator = Generator(img_size, style_dim, w_hpf=w_hpf, input_dim=input_dim)
         mapping_network = MappingNetwork(latent_dim, style_dim, num_domains=num_domains)
 
         self.nets = torch.nn.ModuleDict({
